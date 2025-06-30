@@ -1,2 +1,2 @@
 # AnuncieJá
-Projeto de um site de classificados
+Micro Saas Para Anúncios 
