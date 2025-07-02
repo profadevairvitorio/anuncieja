@@ -41,6 +41,11 @@
     text-decoration: none;
     font-weight: bold;
 }
+.card-img-top-cropped {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+}
 .no-ads {
     text-align: center;
     padding: 50px;

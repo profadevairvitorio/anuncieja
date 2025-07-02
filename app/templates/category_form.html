@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-5">
+            <h2>{{ title }}</h2>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Adicionar Nova Categoria</h5>
+                    <form method="POST" action="{{ url_for('main.manage_categories') }}">
+                        <div class="form-group">
+                            <label for="category-name">Nome da Categoria</label>
+                            <input type="text" id="category-name" name="name" class="form-control"
+                                placeholder="Ex: Veículos, Imóveis, Eletrônicos" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">Salvar Categoria</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <h2>Categorias Existentes</h2>
+            <div class="list-group">
+                {% for category in categories %}
+                    <li class="list-group-item">{{ category.name }}</li>
+                {% else %}
+                    <li class="list-group-item">Nenhuma categoria cadastrada ainda.</li>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

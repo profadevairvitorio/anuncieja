@@ -2,10 +2,10 @@ import os
 import re
 import uuid
 
-from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app, jsonify
+from flask import Blueprint, render_template, request, flash, redirect, url_for, current_app, jsonify, send_from_directory
 
 from app import db
-from app.models import Advertisement
+from app.models import Advertisement, Category
 
 bp = Blueprint('main', __name__)
 
@@ -20,8 +20,28 @@ def save_picture(form_picture):
 
 @bp.route('/')
 def index():
-    ads = Advertisement.query.order_by(Advertisement.created_at.desc()).all()
-    return render_template('index.html', advertisements=ads)
+    search_query = request.args.get('q', '')
+    category_id = request.args.get('category', '')
+
+    query = Advertisement.query
+
+    if search_query:
+        query = query.filter(Advertisement.title.ilike(f'%{search_query}%'))
+
+    if category_id:
+        query = query.filter(Advertisement.category_id == category_id)
+
+    ads = query.order_by(Advertisement.created_at.desc()).all()
+    categories = Category.query.order_by(Category.name).all()
+
+    return render_template(
+        'index.html',
+        advertisements=ads,
+        categories=categories,
+        search_query=search_query,
+        selected_category_id=category_id
+    )
+
 
 
 @bp.route('/anuncio/novo', methods=['GET', 'POST'])
@@ -30,22 +50,33 @@ def new_advertisement():
         title = request.form.get('title')
         description = request.form.get('description')
         price = request.form.get('price')
-        category = request.form.get('category')
-        phone_number = request.form.get('contact_phone')
-        cleaned_phone = re.sub(r'\D', '', phone_number)
+        category_id = request.form.get('category')
+        whatsapp_number = request.form.get('whatsapp_number')
+
+        if not all([title, description, price, category_id, whatsapp_number]):
+            flash('Por favor, preencha todos os campos obrigatórios.', 'danger')
+            categories = Category.query.order_by(Category.name).all()
+            return render_template('cadanuncio.html', title='Criar Novo Anúncio', categories=categories)
+
+        cleaned_phone = re.sub(r'\D', '', whatsapp_number)
+
+        category_object = Category.query.get(category_id)
+        if not category_object:
+            flash('Categoria inválida selecionada.', 'danger')
+            categories = Category.query.order_by(Category.name).all()
+            return render_template('cadanuncio.html', title='Criar Novo Anúncio', categories=categories)
 
         picture_file = 'default.jpg'
         if 'picture' in request.files and request.files['picture'].filename != '':
             form_picture = request.files['picture']
-            picture_file = save_picture(form_picture)
 
         advertisement = Advertisement(
             title=title,
             description=description,
             price=float(price),
-            category=category,
-            contact_phone=cleaned_phone,
-            image_file=picture_file
+            category=category_object,
+            whatsapp_number=cleaned_phone,
+            image_url=picture_file
         )
         db.session.add(advertisement)
         db.session.commit()
@@ -53,6 +84,28 @@ def new_advertisement():
         flash('Seu anúncio foi criado com sucesso!', 'success')
         return redirect(url_for('main.index'))
 
-    return render_template('cadanuncio.html', title='Criar Novo Anúncio')
+    categories = Category.query.order_by(Category.name).all()
+    return render_template('cadanuncio.html', title='Criar Novo Anúncio', categories=categories)
 
 
+@bp.route('/categorias', methods=['GET', 'POST'])
+def manage_categories():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+
+        if not name:
+            flash('O nome da categoria não pode ser vazio.', 'danger')
+        else:
+            existing_category = Category.query.filter(db.func.lower(Category.name) == db.func.lower(name)).first()
+            if existing_category:
+                flash('Essa categoria já existe.', 'warning')
+            else:
+                new_category = Category(name=name)
+                db.session.add(new_category)
+                db.session.commit()
+                flash('Categoria adicionada com sucesso!', 'success')
+
+        return redirect(url_for('main.manage_categories'))
+
+    all_categories = Category.query.order_by(Category.name).all()
+    return render_template('category_form.html', categories=all_categories, title='Gerenciar Categorias')

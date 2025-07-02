@@ -3,6 +3,58 @@
 {% block content %}
 <div class="container">
     <h1 class="my-4">Anúncios Recentes</h1>
-    
+
+    <form method="GET" action="{{ url_for('main.index') }}" class="mb-4">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="search-query">Buscar por Título</label>
+                    <input type="text" id="search-query" name="q" class="form-control" placeholder="Ex: Bicicleta, Carro..." value="{{ search_query }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="category-select">Filtrar por Categoria</label>
+                    <select id="category-select" name="category" class="form-control">
+                        <option value="">Todas as Categorias</option>
+                        {% for category in categories %}
+                            <option value="{{ category.id }}" {% if category.id|string == selected_category_id %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+            </div>
+        </div>
+    </form>
+    <hr>
+
+    <div class="row">
+        {% for ad in advertisements %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <img src="{{ url_for('static', filename='uploads/' + ad.image_url) }}" class="card-img-top-cropped" alt="{{ ad.title }}">
+                <div class="card-body">
+                    <h5 class="card-title">{{ ad.title }}</h5>
+                    <p class="card-text text-muted">{{ ad.category.name }}</p>
+                    <h6 class="card-subtitle mb-2 text-muted">R$ {{ ad.price }}</h6>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="#" class="btn btn-outline-primary btn-sm">Detalhes</a>
+                    <a href="https://wa.me/{{ ad.whatsapp_number }}" class="btn btn-success btn-sm" target="_blank">
+                        <i class="bi bi-whatsapp"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+            <div class="col">
+                <p>Nenhum anúncio encontrado com os filtros aplicados.</p>
+            </div>
+        {% endfor %}
     </div>
+</div>
 {% endblock content %}
